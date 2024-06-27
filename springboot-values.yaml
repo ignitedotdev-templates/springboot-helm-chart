@@ -1,0 +1,16 @@
+appName: springboot
+
+containerPort: 8080
+
+namespace: default
+tier: springboot-backend
+
+serviceName: springboot-service
+containerName: springboot-container
+targetPort: 8080
+servicePort: 8080
+registrySecret: harbor-registry-secret
+
+image:
+  name: harbor.staging.ignite.dev/docker-images/ignitedotdev-templates/springboot-docker
+  tag: 9543865002-1

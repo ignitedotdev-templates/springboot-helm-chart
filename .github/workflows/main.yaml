@@ -1,0 +1,58 @@
+name: Deploy to Staging K8s cluster
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Install and configure kubectl aws-iam-authenticator
+        run: |
+            curl -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator
+            chmod +x ./aws-iam-authenticator
+            sudo mv ./aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+      - name: Install and configure Helm
+        run: |
+            curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+            chmod 700 get_helm.sh
+            ./get_helm.sh
+      - name: Print Current Working Directory
+        run: |
+          echo "Current directory: $(pwd)"
+
+      - name: Configure KUBECONFIG
+        id: check-helm-repo
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.STAGING_INTERNAL_KUBECONFIG }}" > ~/.kube/config
+          export KUBECONFIG=~/.kube/config
+        continue-on-error: true
+
+      - name: Release nodejs using Helm chart
+        run: |
+          release_name="nodejs"
+          helm repo update
+          helm install $release_name chartmuseum/backend-apps -f nodejs-values.yaml
+            
+          
+      - name: Print Current Working Directory
+        run: |
+          echo "Current directory: $(pwd)"
+
+      - name: List Directory Contents
+        run: |
+          ls -R
+
+      - name: Verify Deployment
+        env:
+          KUBE_CONFIG: '/home/runner/.kube/config'
+        run: |
+          kubectl get pods
+
+  
