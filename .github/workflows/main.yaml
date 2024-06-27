@@ -26,21 +26,26 @@ jobs:
         run: |
           echo "Current directory: $(pwd)"
 
-      - name: Configure KUBECONFIG
+      - name: Check If Helm Repository Exists
         id: check-helm-repo
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.STAGING_INTERNAL_KUBECONFIG }}" > ~/.kube/config
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
           export KUBECONFIG=~/.kube/config
+          if helm repo list | grep -q 'chartmuseum'; then
+            echo "Helm repository 'chartmuseum' exists."
+          else
+            echo "Helm repository 'chartmuseum' does not exist. Adding it now..."
+            helm repo add chartmuseum https://chartmuseum.staging.ignite.dev/ --insecure-skip-tls-verify
+          fi
         continue-on-error: true
 
-      - name: Release nodejs using Helm chart
+      - name: Release dotnet using Helm chart
         run: |
-          release_name="nodejs"
+          release_name="springboot"
           helm repo update
-          helm install $release_name chartmuseum/backend-apps -f nodejs-values.yaml
+          helm install $release_name chartmuseum/springboot -f springboot-values.yaml
             
-          
       - name: Print Current Working Directory
         run: |
           echo "Current directory: $(pwd)"
